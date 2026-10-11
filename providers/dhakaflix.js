@@ -6,7 +6,11 @@ var PROVIDER_NAME = "DhakaFlix";
 var DEFAULT_MOVIE_ROOTS = [
   "http://172.16.50.7/DHAKA-FLIX-7/English%20Movies/",
   "http://172.16.50.14/DHAKA-FLIX-14/English%20Movies%20%281080p%29/",
-  "http://172.16.50.14/DHAKA-FLIX-14/Hindi%20Movies/"
+  "http://172.16.50.14/DHAKA-FLIX-14/Hindi%20Movies/",
+  "http://172.16.50.14/DHAKA-FLIX-14/SOUTH%20INDIAN%20MOVIES/Hindi%20Dubbed/",
+  "http://172.16.50.14/DHAKA-FLIX-14/Animation%20Movies%20%281080p%29/",
+  "http://172.16.50.14/DHAKA-FLIX-14/Animation%20Movies/",
+  "http://172.16.50.7/DHAKA-FLIX-7/Kolkata%20Bangla%20Movies/"
 ];
 var DEFAULT_TV_ROOTS = [
   "http://172.16.50.12/DHAKA-FLIX-12/TV-WEB-Series/",
