@@ -5,9 +5,17 @@
 var PROVIDER_NAME = "DhakaFlix";
 var DEFAULT_MOVIE_ROOTS = [
   "http://172.16.50.7/DHAKA-FLIX-7/English%20Movies/",
-  "http://172.16.50.14/DHAKA-FLIX-14/English%20Movies%20%281080p%29/"
+  "http://172.16.50.14/DHAKA-FLIX-14/English%20Movies%20%281080p%29/",
+  "http://172.16.50.14/DHAKA-FLIX-14/Hindi%20Movies/",
+  "http://172.16.50.14/DHAKA-FLIX-14/SOUTH%20INDIAN%20MOVIES/Hindi%20Dubbed/",
+  "http://172.16.50.14/DHAKA-FLIX-14/Animation%20Movies%20%281080p%29/",
+  "http://172.16.50.14/DHAKA-FLIX-14/Animation%20Movies/",
+  "http://172.16.50.7/DHAKA-FLIX-7/Kolkata%20Bangla%20Movies/"
 ];
-var DEFAULT_TV_ROOTS = [];
+var DEFAULT_TV_ROOTS = [
+  "http://172.16.50.12/DHAKA-FLIX-12/TV-WEB-Series/",
+  "http://172.16.50.14/DHAKA-FLIX-14/KOREAN%20TV%20%26%20WEB%20Series/"
+];
 var VIDEO_RE = /\.(mkv|mp4|avi|m4v|webm|ts|mov)$/i;
 var EDITION_RE = /^(extended|remastered|unrated|special|directors)$/;
 var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -101,6 +109,28 @@ function parseName(name) {
     .trim();
   if (!title) return { title: "", year: Number(last[1]), isYearFolder: last.index === 0 };
   return { title: title, year: Number(last[1]), isYearFolder: false };
+}
+
+function parseShow(name) {
+  var m = name.match(/\(\s*TV[^)]*\)/i);
+  if (!m) {
+    var p = parseName(name);
+    return { title: p.title, year: p.year, isShow: false };
+  }
+  var ys = m[0].match(/(?:19|20)\d{2}/);
+  return { title: name.slice(0, m.index).trim(), year: ys ? Number(ys[0]) : null, isShow: true };
+}
+
+function showMatch(c, q) {
+  c = norm(c).replace(/^the /, "");
+  q = norm(q).replace(/^the /, "");
+  return !!c && c === q;
+}
+
+function searchPattern(t) {
+  var parts = String(t || "").split(/[:'\u2019"!?&,.()\[\]+*^$|\\\/]/);
+  parts.sort(function (a, b) { return b.length - a.length; });
+  return (parts[0] || "").trim();
 }
 
 function yearFolderOk(name, year) {
@@ -204,6 +234,40 @@ function listH5ai(url) {
     });
 }
 
+function searchH5ai(root, pattern) {
+  var om = root.match(/^(https?:\/\/[^\/]+)(\/.*)$/);
+  if (!om || !pattern) return Promise.resolve(null);
+  var origin = om[1];
+  var dbase = safeDecode(root);
+  return safeFetch(
+    origin + "/_h5ai/public/php/api.php",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get", search: { href: om[2], pattern: pattern, ignorecase: true } })
+    },
+    15000
+  )
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !Array.isArray(d.search)) return null;
+      var out = [];
+      var seen = {};
+      d.search.forEach(function (it) {
+        if (!it || !it.href || !/\/$/.test(it.href)) return;
+        var abs = it.href.charAt(0) === "/" ? origin + it.href : it.href;
+        if (/\s/.test(abs)) abs = encodeURI(abs);
+        var dabs = safeDecode(abs);
+        if (dabs.indexOf(dbase) !== 0 || seen[dabs]) return;
+        seen[dabs] = true;
+        var parts = dabs.replace(/\/$/, "").split("/");
+        out.push({ name: parts[parts.length - 1], href: abs, dir: true, key: dabs });
+      });
+      return out;
+    })
+    .catch(function () { return null; });
+}
+
 function listDir(url) {
   var c = dirCache[url];
   if (c && Date.now() - c.at < CACHE_MS) return Promise.resolve(c.items);
@@ -255,7 +319,11 @@ function collectVideos(url, depth, rel) {
 
 function pick(items, meta, isTv) {
   return items.filter(function (it) {
-    if (isTv && !it.dir) return false;
+    if (isTv) {
+      if (!it.dir) return false;
+      var sh = parseShow(it.name);
+      return showMatch(sh.title, meta.title) && yearOk(sh.year, meta.year);
+    }
     if (!it.dir && !VIDEO_RE.test(it.name)) return false;
     var p = parseName(it.name);
     if (p.isYearFolder) return false;
@@ -270,6 +338,7 @@ function scan(url, meta, isTv, depth) {
     if (depth > 0) {
       var subs = items.filter(function (it) {
         if (!it.dir) return false;
+        if (isTv) return !parseShow(it.name).isShow;
         var p = parseName(it.name);
         if (p.isYearFolder) return yearFolderOk(it.name, meta.year);
         return !p.year;
@@ -303,7 +372,13 @@ function epMatch(path, s, e) {
 
 function searchRoot(root, meta, isTv, season, episode) {
   return run(function* () {
-    var cands = (yield scan(root, meta, isTv, 2)).slice(0, 4);
+    var cands = null;
+    if (isTv) {
+      var found = yield searchH5ai(root, searchPattern(meta.title));
+      if (found) cands = pick(found, meta, true);
+    }
+    if (!cands || (!cands.length && !isTv)) cands = yield scan(root, meta, isTv, 2);
+    cands = cands.slice(0, 4);
     console.log("[DhakaFlix] " + cands.length + " candidate(s) in " + root);
     var groups = yield Promise.all(
       cands.map(function (c) {
@@ -440,14 +515,14 @@ function onSettings() {
       key: "movieRoots",
       label: "Extra movie folder URLs (comma separated)",
       placeholder: "http://172.16.50.x/DHAKA-FLIX-x/Some%20Movies/",
-      description: "Added on top of the built-in English Movies folders"
+      description: "Added on top of the built-in English and Hindi movie folders"
     },
     {
       type: "text",
       key: "tvRoots",
       label: "TV series folder URLs (comma separated)",
       placeholder: "http://172.16.50.x/DHAKA-FLIX-x/TV-WEB-Series/",
-      description: "Folders that directly contain show folders"
+      description: "Added on top of the built-in TV and Korean folders. Folders that contain show folders"
     },
     { type: "header", label: "TMDB" },
     {
