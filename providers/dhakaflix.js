@@ -12,6 +12,13 @@ var DEFAULT_MOVIE_ROOTS = [
   "http://172.16.50.14/DHAKA-FLIX-14/Animation%20Movies/",
   "http://172.16.50.7/DHAKA-FLIX-7/Kolkata%20Bangla%20Movies/"
 ];
+var DEFAULT_TMDB_KEYS = [
+  "af3d19d7c3406af63381ebd165e32e86",
+  "1865f43a0549ca50d341dd9ab8b29f49",
+  "439c478a771f35c05022f9feabcca01c",
+  "b8a6a683a48e77c8e96bf71b3e5cb5b2",
+  "8265bd1679663a7ea12ac168da84d2e8"
+];
 var DEFAULT_TV_ROOTS = [
   "http://172.16.50.12/DHAKA-FLIX-12/TV-WEB-Series/",
   "http://172.16.50.14/DHAKA-FLIX-14/KOREAN%20TV%20%26%20WEB%20Series/"
@@ -413,22 +420,26 @@ function resolveMeta(id, mediaType, tmdbKey) {
           return { title: d.meta.name, year: parseInt(d.meta.year, 10) || null };
         }
       } else if (/^\d+$/.test(s)) {
-        if (!tmdbKey) {
-          console.log("[DhakaFlix] numeric TMDB id " + s + " but no TMDB API key set in settings");
-          return null;
+        var keys = (tmdbKey ? [tmdbKey] : []).concat(DEFAULT_TMDB_KEYS);
+        for (var i = 0; i < keys.length; i++) {
+          var url =
+            "https://api.themoviedb.org/3/" + (isTv ? "tv" : "movie") + "/" + s + "?api_key=" + encodeURIComponent(keys[i]);
+          var r2;
+          try {
+            r2 = yield safeFetch(url, { headers: { Accept: "application/json" } }, 7000);
+          } catch (e2) {
+            continue;
+          }
+          if (r2.ok) {
+            var d2 = yield r2.json();
+            var date = d2.release_date || d2.first_air_date || "";
+            return {
+              title: d2.title || d2.name || d2.original_title || d2.original_name,
+              year: parseInt(date.slice(0, 4), 10) || null
+            };
+          }
+          console.log("[DhakaFlix] TMDB lookup failed: " + r2.status);
         }
-        var url =
-          "https://api.themoviedb.org/3/" + (isTv ? "tv" : "movie") + "/" + s + "?api_key=" + encodeURIComponent(tmdbKey);
-        var r2 = yield safeFetch(url, { headers: { Accept: "application/json" } }, 7000);
-        if (r2.ok) {
-          var d2 = yield r2.json();
-          var date = d2.release_date || d2.first_air_date || "";
-          return {
-            title: d2.title || d2.name || d2.original_title || d2.original_name,
-            year: parseInt(date.slice(0, 4), 10) || null
-          };
-        }
-        console.log("[DhakaFlix] TMDB lookup failed: " + r2.status);
       } else if (s) {
         return { title: s, year: null };
       }
@@ -530,7 +541,7 @@ function onSettings() {
       key: "tmdbApiKey",
       label: "TMDB API Key",
       placeholder: "Your TMDB v3 API key",
-      description: "Required when Nuvio passes numeric TMDB ids. IMDb ids (tt...) work without it."
+      description: "Optional. Built-in keys are used when blank."
     }
   ]);
 }

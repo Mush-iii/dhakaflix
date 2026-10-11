@@ -1,6 +1,6 @@
 {
   "name": "DhakaFlix",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DhakaFlix BDIX directory scraper for Nuvio",
   "author": "PULS3",
   "scrapers": [
@@ -8,14 +8,39 @@
       "id": "dhakaflix",
       "name": "DhakaFlix",
       "description": "Live scraper for DhakaFlix FTP folders over BDIX",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "PULS3",
-      "supportedTypes": ["movie", "tv"],
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
       "filename": "providers/dhakaflix.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dhakaflix.js",
       "enabled": true,
       "hasSettings": true,
-      "formats": ["mkv", "mp4"]
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "dflixlive",
+      "name": "DFLIX.live",
+      "description": "DFLIX.live scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "PULS3",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/dflixlive.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dflixlive.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
     }
   ],
   "providers": [
@@ -23,14 +48,39 @@
       "id": "dhakaflix",
       "name": "DhakaFlix",
       "description": "Live scraper for DhakaFlix FTP folders over BDIX",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "PULS3",
-      "supportedTypes": ["movie", "tv"],
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
       "filename": "providers/dhakaflix.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dhakaflix.js",
       "enabled": true,
       "hasSettings": true,
-      "formats": ["mkv", "mp4"]
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "dflixlive",
+      "name": "DFLIX.live",
+      "description": "DFLIX.live scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "PULS3",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/dflixlive.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dflixlive.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
     }
   ]
 }
