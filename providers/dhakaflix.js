@@ -1,17 +1,19 @@
 /**
  * dhakaflix - Nuvio Provider (BDIX)
- * Live directory-listing scraper. Runs on the device, no server needed.
+ * Live h5ai directory scraper. Runs on the device, no server needed.
  */
 var PROVIDER_NAME = "DhakaFlix";
-var DEFAULT_MOVIE_ROOTS = "http://172.16.50.7/DHAKA-FLIX-7/English%20Movies/";
-var DEFAULT_TV_ROOTS = "";
+var DEFAULT_MOVIE_ROOTS = [
+  "http://172.16.50.7/DHAKA-FLIX-7/English%20Movies/",
+  "http://172.16.50.14/DHAKA-FLIX-14/English%20Movies%20%281080p%29/"
+];
+var DEFAULT_TV_ROOTS = [];
 var VIDEO_RE = /\.(mkv|mp4|avi|m4v|webm|ts|mov)$/i;
 var EDITION_RE = /^(extended|remastered|unrated|special|directors)$/;
 var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 var CACHE_MS = 30 * 60 * 1000;
 var dirCache = {};
 
-// generator runner (Hermes-safe async/await replacement)
 function run(genFn) {
   return new Promise(function (resolve, reject) {
     var it = genFn();
@@ -46,6 +48,14 @@ function safeFetch(url, options, timeoutMs) {
   );
 }
 
+function safeDecode(s) {
+  try {
+    return decodeURIComponent(s);
+  } catch (e) {
+    return s;
+  }
+}
+
 function norm(s) {
   return String(s || "")
     .toLowerCase()
@@ -75,10 +85,30 @@ function yearOk(a, b) {
 
 function parseName(name) {
   var base = name.replace(VIDEO_RE, "");
-  var m = base.match(/(?:^|[\s.(\[_-])((?:19|20)\d{2})(?=$|[\s.)\]_-])/);
-  if (!m) return { title: base.replace(/[._]+/g, " ").trim(), year: null };
-  var title = base.slice(0, m.index).replace(/[._]+/g, " ").replace(/[\s(\[-]+$/, "").trim();
-  return { title: title || base, year: Number(m[1]) };
+  var m;
+  var last = null;
+  var re = /\(((?:19|20)\d{2})\)/g;
+  while ((m = re.exec(base))) last = m;
+  if (!last) {
+    var re2 = /[\s.\[_-]((?:19|20)\d{2})(?=$|[\s.)\]_-])/g;
+    while ((m = re2.exec(base))) last = m;
+  }
+  if (!last) return { title: base.replace(/[._]+/g, " ").trim(), year: null, isYearFolder: false };
+  var title = base
+    .slice(0, last.index)
+    .replace(/[._]+/g, " ")
+    .replace(/[\s(\[-]+$/, "")
+    .trim();
+  if (!title) return { title: "", year: Number(last[1]), isYearFolder: last.index === 0 };
+  return { title: title, year: Number(last[1]), isYearFolder: false };
+}
+
+function yearFolderOk(name, year) {
+  var p = parseName(name);
+  if (!p.isYearFolder) return false;
+  if (!year) return true;
+  if (/before/i.test(name)) return year <= p.year;
+  return Math.abs(p.year - year) <= 1;
 }
 
 function fixRoot(u) {
@@ -96,9 +126,32 @@ function splitRoots(s) {
     .filter(Boolean);
 }
 
+function mergeRoots(defaults, extra) {
+  var seen = {};
+  var out = [];
+  defaults.concat(extra).forEach(function (r) {
+    r = fixRoot(r);
+    var k = safeDecode(r);
+    if (r && !seen[k]) {
+      seen[k] = true;
+      out.push(r);
+    }
+  });
+  return out;
+}
+
+function entryFromAbs(abs, base, dbase) {
+  var dabs = safeDecode(abs);
+  if (dabs.indexOf(dbase) !== 0 || dabs === dbase) return null;
+  var rest = dabs.slice(dbase.length).replace(/\/$/, "");
+  if (!rest || rest.indexOf("/") !== -1 || rest.charAt(0) === "?") return null;
+  return { name: rest, href: abs, dir: dabs.charAt(dabs.length - 1) === "/", key: dabs };
+}
+
 function parseListing(html, base) {
-  var originMatch = base.match(/^https?:\/\/[^\/]+/);
-  var origin = originMatch ? originMatch[0] : "";
+  var om = base.match(/^https?:\/\/[^\/]+/);
+  var origin = om ? om[0] : "";
+  var dbase = safeDecode(base);
   var out = [];
   var seen = {};
   var re = /<a\s+[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi;
@@ -112,30 +165,61 @@ function parseListing(html, base) {
     if (/^https?:\/\//i.test(href)) abs = href;
     else if (href.charAt(0) === "/") abs = origin + href;
     else abs = base + href;
-    if (abs.indexOf(base) !== 0 || abs === base || seen[abs]) continue;
-    var rest = abs.slice(base.length).replace(/\/$/, "");
-    if (!rest || rest.indexOf("/") !== -1 || rest.charAt(0) === "?") continue;
-    seen[abs] = true;
-    var name = rest;
-    try {
-      name = decodeURIComponent(rest);
-    } catch (e) {}
-    out.push({ name: name, href: abs, dir: abs.charAt(abs.length - 1) === "/" });
+    var e = entryFromAbs(abs, base, dbase);
+    if (!e || seen[e.key]) continue;
+    seen[e.key] = true;
+    out.push(e);
   }
   return out;
+}
+
+function listH5ai(url) {
+  var om = url.match(/^(https?:\/\/[^\/]+)(\/.*)$/);
+  if (!om) return Promise.resolve([]);
+  var origin = om[1];
+  var dbase = safeDecode(url);
+  return safeFetch(
+    origin + "/_h5ai/public/php/api.php",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get", items: { href: om[2], what: 1 } })
+    },
+    15000
+  )
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      var out = [];
+      var seen = {};
+      ((d && d.items) || []).forEach(function (it) {
+        if (!it || !it.href) return;
+        var abs = it.href.charAt(0) === "/" ? origin + it.href : it.href;
+        var e = entryFromAbs(abs, url, dbase);
+        if (e && !seen[e.key]) {
+          seen[e.key] = true;
+          out.push(e);
+        }
+      });
+      return out;
+    });
 }
 
 function listDir(url) {
   var c = dirCache[url];
   if (c && Date.now() - c.at < CACHE_MS) return Promise.resolve(c.items);
-  return safeFetch(url, {}, 12000)
+  return safeFetch(url, {}, 15000)
     .then(function (r) {
       if (!r.ok) throw new Error(r.status + " " + url);
       return r.text();
     })
     .then(function (html) {
       var items = parseListing(html, url);
-      dirCache[url] = { at: Date.now(), items: items };
+      if (items.length || html.indexOf("_h5ai") === -1) return items;
+      return listH5ai(url).catch(function () { return []; });
+    })
+    .then(function (items) {
+      console.log("[DhakaFlix] listed " + items.length + " items: " + url);
+      if (items.length) dirCache[url] = { at: Date.now(), items: items };
       return items;
     });
 }
@@ -169,28 +253,37 @@ function collectVideos(url, depth, rel) {
   });
 }
 
-function findCandidates(root, meta, isTv) {
+function pick(items, meta, isTv) {
+  return items.filter(function (it) {
+    if (isTv && !it.dir) return false;
+    if (!it.dir && !VIDEO_RE.test(it.name)) return false;
+    var p = parseName(it.name);
+    if (p.isYearFolder) return false;
+    return titlesMatch(p.title, meta.title) && yearOk(p.year, meta.year);
+  });
+}
+
+function scan(url, meta, isTv, depth) {
   return run(function* () {
-    var items = yield listDir(root);
-    function pick(list) {
-      return list.filter(function (it) {
-        if (isTv && !it.dir) return false;
-        if (!it.dir && !VIDEO_RE.test(it.name)) return false;
+    var items = yield listDir(url);
+    var hits = pick(items, meta, isTv);
+    if (depth > 0) {
+      var subs = items.filter(function (it) {
+        if (!it.dir) return false;
         var p = parseName(it.name);
-        return titlesMatch(p.title, meta.title) && yearOk(p.year, meta.year);
+        if (p.isYearFolder) return yearFolderOk(it.name, meta.year);
+        return !p.year;
       });
+      if (!meta.year) subs = subs.slice(0, 8);
+      subs = subs.slice(0, 8);
+      var res = yield Promise.all(
+        subs.map(function (s) {
+          return scan(s.href, meta, isTv, depth - 1).catch(function () { return []; });
+        })
+      );
+      hits = hits.concat(flatten(res));
     }
-    var hits = pick(items);
-    if (hits.length) return hits;
-    var cats = items
-      .filter(function (it) { return it.dir && !parseName(it.name).year; })
-      .slice(0, 40);
-    var lists = yield Promise.all(
-      cats.map(function (c) {
-        return listDir(c.href).catch(function () { return []; });
-      })
-    );
-    return pick(flatten(lists));
+    return hits;
   });
 }
 
@@ -210,7 +303,8 @@ function epMatch(path, s, e) {
 
 function searchRoot(root, meta, isTv, season, episode) {
   return run(function* () {
-    var cands = (yield findCandidates(root, meta, isTv)).slice(0, 4);
+    var cands = (yield scan(root, meta, isTv, 2)).slice(0, 4);
+    console.log("[DhakaFlix] " + cands.length + " candidate(s) in " + root);
     var groups = yield Promise.all(
       cands.map(function (c) {
         if (c.dir) return collectVideos(c.href, isTv ? 3 : 2, c.name);
@@ -245,7 +339,7 @@ function resolveMeta(id, mediaType, tmdbKey) {
         }
       } else if (/^\d+$/.test(s)) {
         if (!tmdbKey) {
-          console.log("[DhakaFlix] numeric TMDB id needs a TMDB API key in settings");
+          console.log("[DhakaFlix] numeric TMDB id " + s + " but no TMDB API key set in settings");
           return null;
         }
         var url =
@@ -259,6 +353,7 @@ function resolveMeta(id, mediaType, tmdbKey) {
             year: parseInt(date.slice(0, 4), 10) || null
           };
         }
+        console.log("[DhakaFlix] TMDB lookup failed: " + r2.status);
       } else if (s) {
         return { title: s, year: null };
       }
@@ -286,13 +381,19 @@ function getStreams(tmdbId, mediaType, season, episode) {
     try {
       var settings = (typeof globalThis !== "undefined" && globalThis.SCRAPER_SETTINGS) || {};
       var isTv = mediaType === "tv";
-      var roots = splitRoots(isTv ? settings.tvRoots || DEFAULT_TV_ROOTS : settings.movieRoots || DEFAULT_MOVIE_ROOTS);
+      var roots = mergeRoots(
+        isTv ? DEFAULT_TV_ROOTS : DEFAULT_MOVIE_ROOTS,
+        splitRoots(isTv ? settings.tvRoots : settings.movieRoots)
+      );
       if (!roots.length) {
         console.log("[DhakaFlix] no " + (isTv ? "TV" : "movie") + " roots configured");
         return [];
       }
       var meta = yield resolveMeta(tmdbId, mediaType, settings.tmdbApiKey || null);
-      if (!meta || !meta.title) return [];
+      if (!meta || !meta.title) {
+        console.log("[DhakaFlix] could not resolve title for id " + JSON.stringify(tmdbId));
+        return [];
+      }
       var s = season ? parseInt(season, 10) : 1;
       var e = episode ? parseInt(episode, 10) : 1;
       console.log("[DhakaFlix] searching \"" + meta.title + "\" (" + (meta.year || "?") + ") " + mediaType);
@@ -337,17 +438,15 @@ function onSettings() {
     {
       type: "text",
       key: "movieRoots",
-      label: "Movie folder URLs (comma separated)",
-      placeholder: DEFAULT_MOVIE_ROOTS,
-      defaultValue: DEFAULT_MOVIE_ROOTS,
-      description: "Folders that directly contain 'Title (Year)' movie folders"
+      label: "Extra movie folder URLs (comma separated)",
+      placeholder: "http://172.16.50.x/DHAKA-FLIX-x/Some%20Movies/",
+      description: "Added on top of the built-in English Movies folders"
     },
     {
       type: "text",
       key: "tvRoots",
       label: "TV series folder URLs (comma separated)",
       placeholder: "http://172.16.50.x/DHAKA-FLIX-x/TV-WEB-Series/",
-      defaultValue: DEFAULT_TV_ROOTS,
       description: "Folders that directly contain show folders"
     },
     { type: "header", label: "TMDB" },
@@ -356,7 +455,7 @@ function onSettings() {
       key: "tmdbApiKey",
       label: "TMDB API Key",
       placeholder: "Your TMDB v3 API key",
-      description: "Needed when Nuvio passes numeric TMDB IDs. IMDb ids (tt...) work without it."
+      description: "Required when Nuvio passes numeric TMDB ids. IMDb ids (tt...) work without it."
     }
   ]);
 }
