@@ -12,7 +12,7 @@
       "author": "PULS3",
       "supportedTypes": ["movie", "tv"],
       "filename": "providers/dhakaflix.js",
-      "url": "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/providers/dhakaflix.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dhakaflix.js",
       "enabled": true,
       "hasSettings": true,
       "formats": ["mkv", "mp4"]
@@ -27,7 +27,7 @@
       "author": "PULS3",
       "supportedTypes": ["movie", "tv"],
       "filename": "providers/dhakaflix.js",
-      "url": "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/providers/dhakaflix.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dhakaflix.js",
       "enabled": true,
       "hasSettings": true,
       "formats": ["mkv", "mp4"]
