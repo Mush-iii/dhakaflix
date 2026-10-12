@@ -1,7 +1,7 @@
 {
-  "name": "DhakaFlix",
-  "version": "1.3.0",
-  "description": "DhakaFlix BDIX directory scraper for Nuvio",
+  "name": "Nuvio BDIX",
+  "version": "1.4.1",
+  "description": "BDIX and Bangladeshi streaming scrapers for Nuvio",
   "author": "mushiii",
   "scrapers": [
     {
@@ -92,6 +92,25 @@
       ],
       "filename": "providers/royalflix.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/royalflix.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "circleftp",
+      "name": "CircleFTP",
+      "description": "Circle FTP scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/circleftp.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/circleftp.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -189,6 +208,25 @@
       ],
       "filename": "providers/royalflix.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/royalflix.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "circleftp",
+      "name": "CircleFTP",
+      "description": "Circle FTP scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/circleftp.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/circleftp.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
