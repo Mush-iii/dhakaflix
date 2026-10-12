@@ -1,6 +1,6 @@
 {
   "name": "DhakaFlix",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "DhakaFlix BDIX directory scraper for Nuvio",
   "author": "mushiii",
   "scrapers": [
@@ -15,7 +15,7 @@
         "tv"
       ],
       "filename": "providers/dhakaflix.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dhakaflix.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/dhakaflix.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -34,7 +34,7 @@
         "tv"
       ],
       "filename": "providers/dflixlive.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dflixlive.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/dflixlive.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -53,7 +53,7 @@
         "tv"
       ],
       "filename": "providers/cineplex.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/cineplex.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/cineplex.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -72,7 +72,26 @@
         "tv"
       ],
       "filename": "providers/flixhub.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/flixhub.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/flixhub.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "royalflix",
+      "name": "RoyalFlix",
+      "description": "RoyalFlix BDIX directory scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/royalflix.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/royalflix.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -93,7 +112,7 @@
         "tv"
       ],
       "filename": "providers/dhakaflix.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dhakaflix.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/dhakaflix.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -112,7 +131,7 @@
         "tv"
       ],
       "filename": "providers/dflixlive.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dflixlive.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/dflixlive.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -131,7 +150,7 @@
         "tv"
       ],
       "filename": "providers/cineplex.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/cineplex.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/cineplex.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
@@ -150,7 +169,26 @@
         "tv"
       ],
       "filename": "providers/flixhub.js",
-      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/flixhub.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/flixhub.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "royalflix",
+      "name": "RoyalFlix",
+      "description": "RoyalFlix BDIX directory scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/royalflix.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/royalflix.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
