@@ -1,6 +1,6 @@
 {
   "name": "DhakaFlix",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "DhakaFlix BDIX directory scraper for Nuvio",
   "author": "mushiii",
   "scrapers": [
@@ -41,6 +41,44 @@
         "mkv",
         "mp4"
       ]
+    },
+    {
+      "id": "cineplex",
+      "name": "CinePlex",
+      "description": "CinePlex scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/cineplex.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/cineplex.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "flixhub",
+      "name": "FlixHub",
+      "description": "FlixHub scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/flixhub.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/flixhub.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
     }
   ],
   "providers": [
@@ -75,6 +113,44 @@
       ],
       "filename": "providers/dflixlive.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/dflixlive.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "cineplex",
+      "name": "CinePlex",
+      "description": "CinePlex scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/cineplex.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/cineplex.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "flixhub",
+      "name": "FlixHub",
+      "description": "FlixHub scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/flixhub.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/dhakaflix/refs/heads/main/providers/flixhub.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
