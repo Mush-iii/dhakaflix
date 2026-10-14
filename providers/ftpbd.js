@@ -4,7 +4,7 @@
  */
 var PROVIDER_NAME = "FTPBD";
 var DEFAULT_EMBY_URL = "http://media.ftpbd.net:8096";
-var DEFAULT_USERNAME = "BNET- -USER";
+var DEFAULT_USERNAME = "Info Internet Service";
 var DEFAULT_TMDB_KEYS = [
   "af3d19d7c3406af63381ebd165e32e86",
   "1865f43a0549ca50d341dd9ab8b29f49",
@@ -232,7 +232,7 @@ function toStreams(base, token, item, label) {
     out.push({
       name: PROVIDER_NAME,
       title: "[FTPBD] " + label + q + (ext ? " [" + ext + "]" : "") + (size ? " " + size : "") + (file ? " " + file : ""),
-      url: base + "/emby/Videos/" + item.Id + "/stream?Static=true&MediaSourceId=" + encodeURIComponent(src.Id || item.Id) + "&api_key=" + encodeURIComponent(token),
+      url: base + "/emby/videos/" + item.Id + "/original." + (String(src.Container || "mkv").split(",")[0].toLowerCase()) + "?MediaSourceId=" + encodeURIComponent(src.Id || item.Id) + "&api_key=" + encodeURIComponent(token),
       quality: q,
       headers: { "User-Agent": UA }
     });
