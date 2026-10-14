@@ -278,7 +278,7 @@ function getStreams(tmdbId, mediaType, season, episode) {
       var kind = isTv ? "tv" : "movies";
       var settings = (typeof globalThis !== "undefined" && globalThis.SCRAPER_SETTINGS) || {};
       BASE = String(settings.ctgUrl || "https://ctgmovies.com").trim().replace(/\/+$/, "");
-      var remote = yield remoteCookie(String(settings.ctgCookieUrl || "").trim(), String(settings.ctgCookieKey || "").trim());
+      var remote = yield remoteCookie(String(settings.ctgCookieUrl || "https://ctgmovies.puls3.workers.dev/cookie").trim(), String(settings.ctgCookieKey || "").trim());
       var cookie = buildCookie(remote || settings.ctgCookie);
       var meta = yield resolveMeta(tmdbId, mediaType, settings.tmdbApiKey || null);
       if (!meta || !meta.title) {
@@ -368,7 +368,8 @@ function onSettings() {
       type: "text",
       key: "ctgCookieUrl",
       label: "Cookie Worker URL (optional)",
-      placeholder: "https://ctg.example.workers.dev/cookie",
+      placeholder: "https://ctgmovies.puls3.workers.dev/cookie",
+      defaultValue: "https://ctgmovies.puls3.workers.dev/cookie",
       description: "Fetched on each run (cached 5 min). Takes priority over the manual cookie below."
     },
     {
