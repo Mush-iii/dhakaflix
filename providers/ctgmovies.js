@@ -59,11 +59,17 @@ function norm(s) {
     .trim();
 }
 
+function compact(s) {
+  return norm(s).replace(/\s/g, "");
+}
+
 function titlesMatch(candidate, query) {
   var c = norm(candidate);
   var q = norm(query);
   if (!c || !q) return false;
   if (c === q) return true;
+  // spider-man vs spiderman, etc.
+  if (compact(candidate) === compact(query)) return true;
   var cw = c.split(" ");
   var qw = q.split(" ");
   if (qw.length === 1) return cw.length === 2 && cw[0] === q && EDITION_RE.test(cw[1]);
@@ -174,6 +180,7 @@ function remoteCookie(url, key) {
 function buildCookie(raw) {
   var c = String(raw || "").trim();
   if (c && c.indexOf("=") === -1) c = "ctg_token=" + c;
+  if (c && c.indexOf("ctg_geo_block") === -1) c += "; ctg_geo_block=allow";
   return c;
 }
 
@@ -188,10 +195,13 @@ function fetchText(url, cookie) {
   });
 }
 
+// spider-man -> spiderman (site drops in-word hyphens), other punctuation -> dash
 function slugOf(title) {
   return String(title || "")
     .toLowerCase()
     .replace(/&/g, " and ")
+    .replace(/['’.]/g, "")
+    .replace(/(\w)-(\w)/g, "$1$2")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
@@ -288,14 +298,25 @@ function getStreams(tmdbId, mediaType, season, episode) {
       console.log("[CTGMovies] searching \"" + meta.title + "\" (" + (meta.year || "?") + ") " + mediaType);
 
       var hrefs = [];
-      try {
-        var html = yield fetchText(BASE + "/search?q=" + encodeURIComponent(meta.title), cookie);
-        parseCards(html, kind)
-          .filter(function (c) { return titlesMatch(c.title, meta.title) && yearOk(c.year, meta.year); })
-          .forEach(function (c) { hrefs.push(c.href); });
-      } catch (e) {
-        console.log("[CTGMovies] search failed:", e.message);
+      // try the raw title, then a hyphen-less / colon-less variant (site titles are messy)
+      var queries = [meta.title];
+      var alt = meta.title.replace(/[-:]/g, " ").replace(/\s+/g, " ").trim();
+      if (alt && alt !== meta.title) queries.push(alt);
+      var altJoined = meta.title.replace(/(\w)-(\w)/g, "$1$2");
+      if (altJoined !== meta.title && queries.indexOf(altJoined) === -1) queries.push(altJoined);
+
+      for (var qi = 0; qi < queries.length; qi++) {
+        try {
+          var html = yield fetchText(BASE + "/search?q=" + encodeURIComponent(queries[qi]), cookie);
+          parseCards(html, kind)
+            .filter(function (c) { return titlesMatch(c.title, meta.title) && yearOk(c.year, meta.year); })
+            .forEach(function (c) { if (hrefs.indexOf(c.href) === -1) hrefs.push(c.href); });
+        } catch (e) {
+          console.log("[CTGMovies] search failed:", e.message);
+        }
+        if (hrefs.length) break;
       }
+
       var slug = slugOf(meta.title);
       if (slug) {
         [slug, slug + "-1", meta.year ? slug + "-" + meta.year : ""].forEach(function (s) {
@@ -336,7 +357,7 @@ function getStreams(tmdbId, mediaType, season, episode) {
       });
       streams.sort(function (a, b) { return (QRANK[b.quality] || 0) - (QRANK[a.quality] || 0); });
       if (!cookie) console.log("[CTGMovies] no cookie: set Cookie Worker URL/Key in settings");
-      if (!streams.length) console.log("[CTGMovies] no links found (cookie expired or title missing?)");
+      if (!streams.length) console.log("[CTGMovies] no links found (cookie expired, geo block, or title missing?)");
       console.log("[CTGMovies] " + streams.length + " stream(s)");
       return streams;
     } catch (err) {
