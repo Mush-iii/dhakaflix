@@ -332,7 +332,7 @@
     {
       "id": "ctgmovies",
       "name": "CTGMovies",
-      "description": "CTGMovies scraper for Nuvio (cookie via Cloudflare Worker)",
+      "description": "CTGMovies scraper for Nuvio",
       "version": "1.0.0",
       "author": "mushiii",
       "supportedTypes": [
