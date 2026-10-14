@@ -1,6 +1,6 @@
 {
   "name": "Nuvio BDIX",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "BDIX and Bangladeshi streaming scrapers for Nuvio",
   "author": "mushiii",
   "scrapers": [
@@ -155,6 +155,25 @@
         "mkv",
         "mp4"
       ]
+    },
+    {
+      "id": "ctgmovies",
+      "name": "CTGMovies",
+      "description": "CTGMovies scraper for Nuvio (cookie via Cloudflare Worker)",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/ctgmovies.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/ctgmovies.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
     }
   ],
   "providers": [
@@ -303,6 +322,25 @@
       ],
       "filename": "providers/roarzone.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/roarzone.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "ctgmovies",
+      "name": "CTGMovies",
+      "description": "CTGMovies scraper for Nuvio (cookie via Cloudflare Worker)",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/ctgmovies.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/ctgmovies.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
