@@ -1,6 +1,6 @@
 {
   "name": "Nuvio BDIX",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "BDIX and Bangladeshi streaming scrapers for Nuvio",
   "author": "mushiii",
   "scrapers": [
@@ -117,6 +117,44 @@
         "mkv",
         "mp4"
       ]
+    },
+    {
+      "id": "ftpbd",
+      "name": "FTPBD",
+      "description": "FTPBD Emby guest scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/ftpbd.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/ftpbd.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "roarzone",
+      "name": "RoarZone",
+      "description": "RoarZone Emby guest scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/roarzone.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/roarzone.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
     }
   ],
   "providers": [
@@ -227,6 +265,44 @@
       ],
       "filename": "providers/circleftp.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/circleftp.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "ftpbd",
+      "name": "FTPBD",
+      "description": "FTPBD Emby guest scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/ftpbd.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/ftpbd.js",
+      "enabled": true,
+      "hasSettings": true,
+      "formats": [
+        "mkv",
+        "mp4"
+      ]
+    },
+    {
+      "id": "roarzone",
+      "name": "RoarZone",
+      "description": "RoarZone Emby guest scraper for Nuvio",
+      "version": "1.0.0",
+      "author": "mushiii",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/roarzone.js",
+      "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/roarzone.js",
       "enabled": true,
       "hasSettings": true,
       "formats": [
