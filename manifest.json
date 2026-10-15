@@ -1,6 +1,6 @@
 {
   "name": "Nuvio BDIX",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "BDIX and Bangladeshi streaming scrapers for Nuvio",
   "author": "mushiii",
   "scrapers": [
@@ -178,11 +178,12 @@
     {
       "id": "ghuri",
       "name": "Ghuri",
-      "description": "Ghuri BDIX movie scraper for Nuvio",
+      "description": "Ghuri BDIX movie and TV scraper for Nuvio",
       "version": "1.0.0",
       "author": "mushiii",
       "supportedTypes": [
-        "movie"
+        "movie",
+        "tv"
       ],
       "filename": "providers/ghuri.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/ghuri.js",
@@ -369,11 +370,12 @@
     {
       "id": "ghuri",
       "name": "Ghuri",
-      "description": "Ghuri BDIX movie scraper for Nuvio",
+      "description": "Ghuri BDIX movie and TV scraper for Nuvio",
       "version": "1.0.0",
       "author": "mushiii",
       "supportedTypes": [
-        "movie"
+        "movie",
+        "tv"
       ],
       "filename": "providers/ghuri.js",
       "url": "https://raw.githubusercontent.com/Mush-iii/nuvio/refs/heads/main/providers/ghuri.js",
