@@ -1,6 +1,6 @@
 /**
  * ghuri - Nuvio Provider (BDIX)
- * Ghuri (103.96.104.6) movie scraper. Runs on the device, no server needed.
+ * Ghuri (103.96.104.6) movie + TV scraper. Runs on the device, no server needed.
  */
 var PROVIDER_NAME = "Ghuri";
 var DEFAULT_BASE_URL = "http://103.96.104.6";
@@ -101,7 +101,8 @@ function attrOf(tag, name) {
 function absUrl(base, u) {
   u = decodeEntities(String(u || "").trim());
   if (/^https?:\/\//i.test(u)) return u;
-  return base + (u.charAt(0) === "/" ? "" : "/") + u;
+  if (u.charAt(0) === "/") return base + u;
+  return base + "/" + u.replace(/^(\.{1,2}\/)+/, "");
 }
 
 function encodePath(u) {
@@ -135,7 +136,7 @@ function getPage(url, headers) {
     });
 }
 
-function resolveMeta(id, tmdbKey) {
+function resolveMeta(id, mediaType, tmdbKey) {
   return run(function* () {
     if (id && typeof id === "object") {
       return { title: id.title || id.name || "", year: parseInt(id.year || "", 10) || null, imdbId: id.imdbId || id.imdb_id || null };
@@ -144,22 +145,23 @@ function resolveMeta(id, tmdbKey) {
     if (!s) return null;
     var isImdb = /^tt\d+/.test(s);
     if (!isImdb && !/^\d+$/.test(s)) return { title: s, year: null, imdbId: null };
+    var isTv = mediaType === "tv";
     var keys = (tmdbKey ? [tmdbKey] : []).concat(DEFAULT_TMDB_KEYS);
     for (var i = 0; i < keys.length; i++) {
       try {
         var url = isImdb
           ? "https://api.themoviedb.org/3/find/" + s.split(":")[0] + "?external_source=imdb_id&api_key=" + encodeURIComponent(keys[i])
-          : "https://api.themoviedb.org/3/movie/" + s + "?append_to_response=external_ids&api_key=" + encodeURIComponent(keys[i]);
+          : "https://api.themoviedb.org/3/" + (isTv ? "tv" : "movie") + "/" + s + "?append_to_response=external_ids&api_key=" + encodeURIComponent(keys[i]);
         var r = yield safeFetch(url, { headers: { Accept: "application/json" } }, 6000);
         if (!r.ok) continue;
         var d = yield r.json();
         if (isImdb) {
-          d = (d.movie_results || [])[0];
+          d = ((isTv ? d.tv_results : d.movie_results) || [])[0];
           if (!d) continue;
         }
-        var date = d.release_date || "";
+        var date = d.release_date || d.first_air_date || "";
         return {
-          title: d.title || d.original_title,
+          title: d.title || d.name || d.original_title || d.original_name,
           year: parseInt(date.slice(0, 4), 10) || null,
           imdbId: isImdb ? s.split(":")[0] : (d.imdb_id || (d.external_ids && d.external_ids.imdb_id) || null)
         };
@@ -170,7 +172,7 @@ function resolveMeta(id, tmdbKey) {
     if (isImdb) {
       try {
         var cr = yield safeFetch(
-          "https://v3-cinemeta.strem.io/meta/movie/" + s.split(":")[0] + ".json",
+          "https://v3-cinemeta.strem.io/meta/" + (isTv ? "series" : "movie") + "/" + s.split(":")[0] + ".json",
           { headers: { Accept: "application/json" } },
           7000
         );
@@ -191,8 +193,11 @@ function parseResults(html, base) {
   var m;
   while ((m = re.exec(html))) {
     var href = attrOf(m[1], "href");
-    var idm = /movie\.php\?imdbid=(tt\d+)/i.exec(href);
-    if (!idm || seen[idm[1]]) continue;
+    var mm = /movie\.php\?imdbid=(tt\d+)/i.exec(href);
+    var tm = /single-tvseries\.php\?epiid=(\d+)&(?:amp;)?tvid=(\d+)/i.exec(href);
+    if (!mm && !tm) continue;
+    var key = mm ? mm[1] : "tv" + tm[2];
+    if (seen[key]) continue;
     var inner = m[2];
     var title = "";
     var hm = /class=["'][^"']*searchheading[^"']*["'][^>]*>([\s\S]*?)<\/div>/i.exec(inner);
@@ -203,15 +208,15 @@ function parseResults(html, base) {
     }
     if (!title) title = stripTags(inner);
     if (!title) continue;
-    seen[idm[1]] = true;
+    seen[key] = true;
     var ym = /\((\d{4})\)/.exec(title);
-    var catm = /[?&]cat=([^&"']+)/i.exec(href);
     out.push({
-      imdbId: idm[1],
+      isTv: !!tm,
+      imdbId: mm ? mm[1] : null,
+      tvId: tm ? tm[2] : null,
       title: title,
       year: ym ? parseInt(ym[1], 10) : null,
-      cat: catm ? decodeEntities(decodeURIComponent(catm[1].replace(/\+/g, " "))) : "",
-      url: absUrl(base, href.charAt(0) === "/" || /^https?:/i.test(href) ? href : "/" + href)
+      url: absUrl(base, href)
     });
   }
   return out;
@@ -235,7 +240,7 @@ function extractVideos(html, base) {
     var s = attrOf(m[0], "src");
     if (s) urls.push(absUrl(base, s));
   }
-  var are = /<a\b[^>]*title=["']Download Movie["'][^>]*>/gi;
+  var are = /<a\b[^>]*title=["']Download (?:Movie|Tv Series)["'][^>]*>/gi;
   while ((m = are.exec(html))) {
     var h = attrOf(m[0], "href");
     if (h) urls.push(absUrl(base, h));
@@ -248,27 +253,66 @@ function extractVideos(html, base) {
   });
 }
 
+function findEpisodeUrl(html, base, season, episode) {
+  var tabRe = /<a\b[^>]*href=["']#([^"']+)["'][^>]*data-toggle=["']tab["'][^>]*>\s*Season:?\s*(\d+)\s*<\/a>/gi;
+  var paneId = null;
+  var m;
+  while ((m = tabRe.exec(html))) {
+    if (parseInt(m[2], 10) === season) { paneId = m[1]; break; }
+  }
+  if (!paneId) return null;
+  var start = html.search(new RegExp("id=[\"']" + paneId.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") + "[\"']"));
+  if (start < 0) return null;
+  var rest = html.slice(start + 1);
+  var next = rest.search(/<div class=["']tab-pane\b/i);
+  var pane = next >= 0 ? rest.slice(0, next) : rest;
+  var re = /<a\b([^>]*)>\s*(\d+)\s*<\/a>/gi;
+  while ((m = re.exec(pane))) {
+    var href = attrOf(m[1], "href");
+    if (/single-tvseries\.php\?epiid=/i.test(href) && parseInt(m[2], 10) === episode) return absUrl(base, href);
+  }
+  return null;
+}
+
+function buildStreams(html, base, pageUrl, card, label) {
+  var sizeM = /DOWNLOAD\s*<span[^>]*>\s*\[([^\]]+)\]/i.exec(html);
+  var size = sizeM ? sizeM[1].trim() : "";
+  var qm = /Quality\s*<\/td>\s*<td[^>]*>\s*([^<\s][^<]*?)\s*<\/td>/i.exec(html);
+  var site = qm ? qm[1].trim() : "";
+  return extractVideos(html, base).map(function (u) {
+    var q = qualityOf(decodeURIComponent(u) + " " + card.title);
+    var tag = q === "HD" && site ? site : q;
+    return {
+      name: PROVIDER_NAME,
+      title: "[Ghuri] " + label + tag + (size ? " | " + size : ""),
+      url: encodePath(u),
+      quality: q,
+      headers: { "User-Agent": UA, Referer: pageUrl }
+    };
+  });
+}
+
 function getStreams(tmdbId, mediaType, season, episode) {
   return run(function* () {
     try {
-      if (mediaType === "tv") return [];
       var settings = (typeof globalThis !== "undefined" && globalThis.SCRAPER_SETTINGS) || {};
       var base = String(settings.ghuriBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
-      var meta = yield resolveMeta(tmdbId, settings.tmdbApiKey || null);
+      var isTv = mediaType === "tv";
+      var meta = yield resolveMeta(tmdbId, mediaType, settings.tmdbApiKey || null);
       if (!meta || !meta.title) {
         console.log("[Ghuri] could not resolve title for id " + JSON.stringify(tmdbId));
         return [];
       }
-      console.log("[Ghuri] searching \"" + meta.title + "\" (" + (meta.year || "?") + ")");
+      console.log("[Ghuri] searching \"" + meta.title + "\" (" + (meta.year || "?") + ") " + mediaType);
 
-      var items = yield search(base, meta.title);
+      var items = (yield search(base, meta.title)).filter(function (c) { return c.isTv === isTv; });
       var cards = [];
-      if (meta.imdbId) {
+      if (!isTv && meta.imdbId) {
         cards = items.filter(function (c) { return c.imdbId === meta.imdbId; });
       }
       if (!cards.length) {
         cards = items.filter(function (c) { return titlesMatch(c.title, meta.title); });
-        if (meta.year) {
+        if (!isTv && meta.year) {
           cards = cards.filter(function (c) { return !c.year || Math.abs(c.year - meta.year) <= 1; });
         }
       }
@@ -276,20 +320,21 @@ function getStreams(tmdbId, mediaType, season, episode) {
       console.log("[Ghuri] " + cards.length + " match(es)");
       if (!cards.length) return [];
 
+      var s = season ? parseInt(season, 10) : 1;
+      var e = episode ? parseInt(episode, 10) : 1;
+      var label = isTv ? "S" + s + "E" + e + " - " : "";
+
       var results = yield Promise.all(cards.map(function (c) {
         return getPage(c.url, { Referer: base + "/" }).then(function (html) {
           if (!html) return [];
-          var sizeM = /DOWNLOAD\s*<span[^>]*>\s*\[([^\]]+)\]/i.exec(html);
-          var size = sizeM ? sizeM[1].trim() : "";
-          return extractVideos(html, base).map(function (u) {
-            var q = qualityOf(decodeURIComponent(u) + " " + c.title);
-            return {
-              name: PROVIDER_NAME,
-              title: "[Ghuri] " + q + (size ? " | " + size : ""),
-              url: encodePath(u),
-              quality: q,
-              headers: { "User-Agent": UA, Referer: c.url }
-            };
+          if (!isTv) return buildStreams(html, base, c.url, c, label);
+          var epUrl = findEpisodeUrl(html, base, s, e);
+          if (!epUrl) {
+            console.log("[Ghuri] S" + s + "E" + e + " not found for " + c.title);
+            return [];
+          }
+          return getPage(epUrl, { Referer: c.url }).then(function (eh) {
+            return eh ? buildStreams(eh, base, epUrl, c, label) : [];
           });
         });
       }));
